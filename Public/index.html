@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AAY TRIP PRO</title>
+
+<style>
+body{
+margin:0;
+font-family:tahoma;
+background:linear-gradient(135deg,#eef2ff,#e0f2fe,#ecfeff);
+}
+
+header{
+background:#111;
+color:#fff;
+padding:15px;
+text-align:center;
+font-weight:bold;
+}
+
+/* MENU */
+.menu{
+display:flex;
+gap:5px;
+padding:10px;
+background:#fff;
+position:sticky;
+top:0;
+box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+.menu button{
+flex:1;
+padding:8px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+background:#eee;
+font-weight:bold;
+}
+
+.menu button.active{
+background:#6366f1;
+color:#fff;
+}
+
+/* SECTIONS */
+.section{display:none;padding:10px}
+.section.active{display:block}
+
+/* CARDS */
+.card{
+background:#fff;
+padding:12px;
+margin:10px 0;
+border-radius:12px;
+box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+
+input,button{
+width:100%;
+padding:8px;
+margin-top:5px;
+border-radius:8px;
+border:1px solid #ddd;
+}
+
+button.action{
+background:#6366f1;
+color:#fff;
+border:none;
+cursor:pointer;
+}
+
+.row{
+display:flex;
+justify-content:space-between;
+padding:5px 0;
+border-bottom:1px solid #eee;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>✈️ AAY TRIP PRO</header>
+
+<!-- 🔥 MENU -->
+<div class="menu">
+<button class="active" onclick="openTab('members',event)">الأعضاء</button>
+<button onclick="openTab('events',event)">الفعاليات</button>
+<button onclick="openTab('restaurants',event)">المطاعم</button>
+<button onclick="openTab('expenses',event)">المصروفات</button>
+</div>
+
+<div class="container">
+
+<!-- ================= MEMBERS ================= -->
+<div id="members" class="section active">
+<div class="card">
+<h3>👥 الأعضاء</h3>
+
+<input id="mName" placeholder="اسم العضو">
+<input id="mDue" type="number" placeholder="المطلوب">
+<input id="mPaid" type="number" placeholder="المدفوع">
+<button class="action" onclick="addMember()">إضافة</button>
+
+<div id="membersList"></div>
+</div>
+</div>
+
+<!-- ================= EVENTS ================= -->
+<div id="events" class="section">
+<div class="card">
+<h3>🎉 الفعاليات</h3>
+
+<input id="eTitle" placeholder="اسم الفعالية">
+<input id="eDate" placeholder="التاريخ">
+<input id="ePrice" type="number" placeholder="السعر">
+<button class="action" onclick="addEvent()">إضافة</button>
+
+<div id="eventsList"></div>
+</div>
+</div>
+
+<!-- ================= RESTAURANTS ================= -->
+<div id="restaurants" class="section">
+<div class="card">
+<h3>🍽️ المطاعم</h3>
+
+<input id="rName" placeholder="اسم المطعم">
+<input id="rDate" placeholder="التاريخ">
+<input id="rPrice" type="number" placeholder="السعر">
+<button class="action" onclick="addRestaurant()">إضافة</button>
+
+<div id="restaurantsList"></div>
+</div>
+</div>
+
+<!-- ================= EXPENSES ================= -->
+<div id="expenses" class="section">
+<div class="card">
+<h3>💰 المصروفات</h3>
+
+<input id="xName" placeholder="المصروف">
+<input id="xDate" placeholder="التاريخ">
+<input id="xAmount" type="number" placeholder="المبلغ">
+<button class="action" onclick="addExpense()">إضافة</button>
+
+<div id="expensesList"></div>
+</div>
+</div>
+
+</div>
+
+<script>
+
+/* 🔥 MENU CONTROL */
+function openTab(id,e){
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+document.querySelectorAll(".menu button").forEach(b=>b.classList.remove("active"));
+
+document.getElementById(id).classList.add("active");
+e.target.classList.add("active");
+}
+
+/* ================= LOAD ALL ================= */
+window.onload = () => loadAll();
+
+async function loadAll(){
+loadMembers();
+loadEvents();
+loadRestaurants();
+loadExpenses();
+}
+
+/* ================= MEMBERS ================= */
+async function loadMembers(){
+let res = await fetch("/members");
+let data = await res.json();
+
+document.getElementById("membersList").innerHTML =
+data.map(m=>`
+<div class="card">
+<div class="row">
+<b>${m.name}</b>
+<span>${m.due} ر.س</span>
+</div>
+<div class="row">
+<span>مدفوع: ${m.paid}</span>
+<span>% ${m.due ? Math.round((m.paid/m.due)*100) : 0}</span>
+</div>
+</div>
+`).join("");
+}
+
+async function addMember(){
+await fetch("/members",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({name:mName.value,due:+mDue.value,paid:+mPaid.value})
+});
+loadMembers();
+}
+
+/* ================= EVENTS ================= */
+async function loadEvents(){
+let res = await fetch("/events");
+let data = await res.json();
+
+document.getElementById("eventsList").innerHTML =
+data.map(e=>`
+<div class="card">
+<div class="row">
+<b>${e.title}</b>
+<span>${e.date}</span>
+</div>
+<div class="row">
+<span>${e.price} ر.س</span>
+<button onclick="toggleEvent('${e._id}')">✔</button>
+</div>
+</div>
+`).join("");
+}
+
+async function addEvent(){
+await fetch("/events",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({title:eTitle.value,date:eDate.value,price:+ePrice.value})
+});
+loadEvents();
+}
+
+async function toggleEvent(id){
+await fetch("/events/"+id,{method:"PUT"});
+loadEvents();
+}
+
+/* ================= RESTAURANTS ================= */
+async function loadRestaurants(){
+let res = await fetch("/restaurants");
+let data = await res.json();
+
+document.getElementById("restaurantsList").innerHTML =
+data.map(r=>`
+<div class="card">
+<div class="row">
+<b>${r.name}</b>
+<span>${r.date}</span>
+</div>
+<div class="row">
+<span>${r.price} ر.س</span>
+<button onclick="toggleR('${r._id}')">✔</button>
+</div>
+</div>
+`).join("");
+}
+
+async function addRestaurant(){
+await fetch("/restaurants",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({name:rName.value,date:rDate.value,price:+rPrice.value})
+});
+loadRestaurants();
+}
+
+async function toggleR(id){
+await fetch("/restaurants/"+id,{method:"PUT"});
+loadRestaurants();
+}
+
+/* ================= EXPENSES ================= */
+async function loadExpenses(){
+let res = await fetch("/expenses");
+let data = await res.json();
+
+document.getElementById("expensesList").innerHTML =
+data.map(x=>`
+<div class="card">
+<div class="row">
+<b>${x.name}</b>
+<span>${x.date}</span>
+</div>
+<div class="row">
+<span>${x.amount} ر.س</span>
+</div>
+</div>
+`).join("");
+}
+
+async function addExpense(){
+await fetch("/expenses",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({name:xName.value,date:xDate.value,amount:+xAmount.value})
+});
+loadExpenses();
+}
+
+</script>
+
+</body>
+</html>
