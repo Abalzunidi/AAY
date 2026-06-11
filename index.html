@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trip Planner PRO</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+--p:#8B5CF6;
+--b:#3B82F6;
+--g:#22c55e;
+--r:#ef4444;
+--glass:rgba(255,255,255,.65);
+--blur:blur(16px);
+}
+
+*{box-sizing:border-box;font-family:"Tajawal"}
+
+body{
+margin:0;
+background:linear-gradient(135deg,#f5f3ff,#e0f2fe,#fef3c7,#ecfdf5);
+min-height:100vh;
+}
+
+/* خلفية سفر */
+.bg-icon{
+position:fixed;
+font-size:40px;
+opacity:.12;
+animation:float 8s infinite ease-in-out;
+pointer-events:none;
+}
+@keyframes float{
+0%,100%{transform:translateY(0)}
+50%{transform:translateY(-25px)}
+}
+.i1{top:10%;left:5%}
+.i2{top:70%;right:10%}
+.i3{top:40%;left:80%}
+.i4{bottom:10%;left:30%}
+
+header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:12px;
+}
+
+.logo{
+font-size:22px;
+font-weight:800;
+background:linear-gradient(90deg,var(--p),var(--b),var(--g));
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+
+nav button{
+border:none;
+padding:8px 12px;
+border-radius:12px;
+margin:2px;
+background:var(--glass);
+cursor:pointer;
+font-weight:600;
+}
+
+nav button.active{
+background:linear-gradient(90deg,var(--p),var(--b));
+color:#fff;
+}
+
+.section{display:none;padding:12px}
+.section.active{display:block}
+
+.card{
+background:var(--glass);
+backdrop-filter:var(--blur);
+padding:12px;
+border-radius:18px;
+margin-bottom:10px;
+box-shadow:0 10px 25px rgba(0,0,0,.05);
+}
+
+input{
+width:100%;
+padding:10px;
+margin:5px 0;
+border-radius:10px;
+border:1px solid #ddd;
+}
+
+.btn{
+width:100%;
+padding:10px;
+border:none;
+border-radius:10px;
+background:linear-gradient(90deg,var(--p),var(--b));
+color:#fff;
+font-weight:700;
+cursor:pointer;
+}
+
+.row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:6px 0;
+border-bottom:1px solid #eee;
+gap:8px;
+}
+
+.money{color:var(--g);font-weight:700}
+
+.badge{
+font-size:12px;
+padding:3px 8px;
+background:#eee;
+border-radius:10px;
+}
+
+.del{
+background:#ef4444;
+color:#fff;
+border:none;
+border-radius:8px;
+padding:4px 8px;
+cursor:pointer;
+}
+
+.check{
+transform:scale(1.3);
+}
+
+.progress{
+height:8px;
+background:#eee;
+border-radius:10px;
+overflow:hidden;
+margin-top:5px;
+}
+
+.bar{
+height:100%;
+background:linear-gradient(90deg,var(--g),var(--b));
+}
+
+.small{font-size:12px;color:#666}
+</style>
+</head>
+
+<body>
+
+<div class="bg-icon i1">✈️</div>
+<div class="bg-icon i2">🧳</div>
+<div class="bg-icon i3">🌍</div>
+<div class="bg-icon i4">🏝️</div>
+
+<header>
+<div class="logo">TRIP PRO ✨</div>
+<nav>
+<button class="active" onclick="show('members',event)">الأعضاء</button>
+<button onclick="show('restaurants',event)">المطاعم</button>
+<button onclick="show('events',event)">الفعاليات</button>
+<button onclick="show('expenses',event)">المصروفات</button>
+</nav>
+</header>
+
+<!-- MEMBERS -->
+<div id="members" class="section active">
+<div class="card">
+<input id="mName" placeholder="اسم العضو">
+<input id="mDue" type="number" placeholder="المبلغ المطلوب">
+<input id="mPaid" type="number" placeholder="المبلغ المدفوع">
+<button class="btn" onclick="addMember()">إضافة عضو</button>
+</div>
+<div id="mList"></div>
+</div>
+
+<!-- RESTAURANTS -->
+<div id="restaurants" class="section">
+<div class="card">
+<input id="rName" placeholder="اسم المطعم">
+<input id="rPrice" type="number" placeholder="السعر">
+<input id="rDate" type="date">
+<button class="btn" onclick="addRestaurant()">إضافة مطعم</button>
+</div>
+<div id="rList"></div>
+</div>
+
+<!-- EVENTS -->
+<div id="events" class="section">
+<div class="card">
+<input id="eName" placeholder="اسم الفعالية">
+<input id="ePrice" type="number" placeholder="السعر">
+<input id="eDate" type="date">
+<button class="btn" onclick="addEvent()">إضافة فعالية</button>
+</div>
+<div id="eList"></div>
+</div>
+
+<!-- EXPENSES -->
+<div id="expenses" class="section">
+<div class="card">
+<input id="xName" placeholder="اسم المصروف">
+<input id="xAmt" type="number" placeholder="المبلغ">
+<input id="xDate" type="date">
+<button class="btn" onclick="addExpense()">إضافة مصروف</button>
+</div>
+<div id="xList"></div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("trip_pro")) || {
+members:[],
+restaurants:[],
+events:[],
+expenses:[]
+};
+
+function save(){
+localStorage.setItem("trip_pro",JSON.stringify(data));
+render();
+}
+
+function show(id,e){
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+e.target.classList.add("active");
+}
+
+/* MEMBERS */
+function addMember(){
+data.members.push({
+name:mName.value,
+due:+mDue.value,
+paid:+mPaid.value
+});
+mName.value=mDue.value=mPaid.value="";
+save();
+}
+
+function calcPercent(m){
+return m.due?Math.min(100,(m.paid/m.due)*100):0;
+}
+
+/* RESTAURANTS */
+function addRestaurant(){
+data.restaurants.push({
+name:rName.value,
+price:+rPrice.value,
+date:rDate.value,
+done:false
+});
+rName.value=rPrice.value=rDate.value="";
+save();
+}
+
+/* EVENTS */
+function addEvent(){
+data.events.push({
+name:eName.value,
+price:+ePrice.value,
+date:eDate.value,
+done:false
+});
+eName.value=ePrice.value=eDate.value="";
+save();
+}
+
+/* EXPENSES */
+function addExpense(){
+data.expenses.push({
+name:xName.value,
+amt:+xAmt.value,
+date:xDate.value
+});
+xName.value=xAmt.value=xDate.value="";
+save();
+}
+
+/* DELETE */
+function del(type,i){
+data[type].splice(i,1);
+save();
+}
+
+/* TOGGLE DONE */
+function toggle(type,i){
+data[type][i].done=!data[type][i].done;
+save();
+}
+
+/* RENDER */
+function render(){
+
+/* MEMBERS */
+mList.innerHTML=data.members.map((m,i)=>{
+let p=calcPercent(m);
+return `
+<div class="card">
+<div class="row">
+<b>${m.name}</b>
+<button class="del" onclick="del('members',${i})">حذف</button>
+</div>
+
+<div class="small">مدفوع: ${m.paid} ر.س / المطلوب: ${m.due} ر.س</div>
+
+<div class="progress">
+<div class="bar" style="width:${p}%"></div>
+</div>
+
+<div class="small">${p.toFixed(0)}%</div>
+</div>`;
+}).join("");
+
+
+/* RESTAURANTS */
+rList.innerHTML=data.restaurants.map((r,i)=>`
+<div class="card">
+<div class="row">
+<b>${r.name}</b>
+<button class="del" onclick="del('restaurants',${i})">حذف</button>
+</div>
+
+<div class="small">💰 ${r.price} ر.س</div>
+<div class="small">📅 ${r.date||'-'}</div>
+
+<label>
+<input type="checkbox" class="check" ${r.done?'checked':''}
+onchange="toggle('restaurants',${i})">
+ تمت الزيارة
+</label>
+</div>
+`).join("");
+
+/* EVENTS */
+eList.innerHTML=data.events.map((e,i)=>`
+<div class="card">
+<div class="row">
+<b>${e.name}</b>
+<button class="del" onclick="del('events',${i})">حذف</button>
+</div>
+
+<div class="small">💰 ${e.price} ر.س</div>
+<div class="small">📅 ${e.date||'-'}</div>
+
+<label>
+<input type="checkbox" class="check" ${e.done?'checked':''}
+onchange="toggle('events',${i})">
+ تمت الفعالية
+</label>
+</div>
+`).join("");
+
+/* EXPENSES */
+xList.innerHTML=data.expenses.map((x,i)=>`
+<div class="card">
+<div class="row">
+<b>${x.name}</b>
+<button class="del" onclick="del('expenses',${i})">حذف</button>
+</div>
+
+<div class="small">💰 ${x.amt} ر.س</div>
+<div class="small">📅 ${x.date||'-'}</div>
+</div>
+`).join("");
+}
+
+render();
+</script>
+
+</body>
+</html>
